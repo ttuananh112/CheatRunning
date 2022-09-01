@@ -45,10 +45,12 @@
 
 
 	function onMapClick(e) {
-		if (typeof marker != 'undefined')
-		    map.removeLayer(marker);
+<!--		if (typeof marker != 'undefined')-->
+<!--		    map.removeLayer(marker);-->
 		marker = L.marker(e.latlng).addTo(map);
+		markers.push(marker);
         Android.setPosition(e.latlng.wrap().toString());
+        Android.addListLocation(e.latlng.lat.toFixed(5), e.latlng.lng.toFixed(5))
 	}
 
     function setOnMap(aLat, aLng) {
@@ -61,6 +63,13 @@
 	    //alert(alreadyRunning);
     }
 
+    function removeMarker() {
+        for(var i = 0; i < markers.length; i++){
+            map.removeLayer(markers[i]);
+        }
+    }
+
+    markers = [];
     map.on('contextmenu', onMapClick);
 
     lat = Android.getLat();
@@ -69,7 +78,8 @@
     if (lat != 0 && lng != 0)
     {
         map.setView(new L.LatLng(lat, lng), 12);
-        marker = L.marker([lat, lng]).addTo(map);
+<!--        marker = L.marker([lat, lng]).addTo(map);-->
+<!--        markers.push(marker);-->
     }
 
 

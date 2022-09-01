@@ -10,7 +10,9 @@ import android.content.pm.PackageManager;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
+
 import androidx.appcompat.app.AppCompatActivity;
+
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
@@ -24,6 +26,10 @@ import static cl.coders.faketraveler.MainActivity.SourceChange.CHANGE_FROM_EDITT
 import static cl.coders.faketraveler.MainActivity.SourceChange.CHANGE_FROM_MAP;
 import static cl.coders.faketraveler.MainActivity.SourceChange.NONE;
 
+import java.util.ArrayList;
+
+import cl.coders.faketraveler.model.Location;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -35,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
     public static AlarmManager alarmManager;
     static Button button0;
     static Button button1;
+    static Button button2;
     static WebView webView;
     static EditText editTextLat;
     static EditText editTextLng;
@@ -50,7 +57,8 @@ public class MainActivity extends AppCompatActivity {
     private static MockLocationProvider mockNetwork;
     private static MockLocationProvider mockGps;
 
-    WebAppInterface webAppInterface;
+    static WebAppInterface webAppInterface;
+    static ArrayList<Thread> listThreads;
 
     public enum SourceChange {
         NONE, CHANGE_FROM_EDITTEXT, CHANGE_FROM_MAP
@@ -72,8 +80,12 @@ public class MainActivity extends AppCompatActivity {
 
         button0 = (Button) findViewById(R.id.button0);
         button1 = (Button) findViewById(R.id.button1);
+        button2 = (Button) findViewById(R.id.button2);
+
         editTextLat = findViewById(R.id.editText0);
         editTextLng = findViewById(R.id.editText1);
+
+        listThreads = new ArrayList<>();
 
         button0.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -87,6 +99,19 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View arg0) {
                 Intent myIntent = new Intent(getBaseContext(), MoreActivity.class);
                 startActivity(myIntent);
+            }
+        });
+
+        button2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                webView.loadUrl("javascript:removeMarker();");
+                webAppInterface.resetListLocation();  // TODO: marker should be in Location
+
+                for (int i = 0; i < listThreads.size(); i++) {
+                    listThreads.get(i).stop();
+                }
+                webAppInterface.resetRunningHandler();
             }
         });
 
@@ -236,41 +261,56 @@ public class MainActivity extends AppCompatActivity {
      * Apply a mocked location, and start an alarm to keep doing it if howManyTimes is > 1
      * This method is called when "Apply" button is pressed.
      */
-    protected static void applyLocation() {
-        if (latIsEmpty() || lngIsEmpty()) {
-            toast(context.getResources().getString(R.string.MainActivity_NoLatLong));
-            return;
-        }
-
-        lat = Double.parseDouble(editTextLat.getText().toString());
-        lng = Double.parseDouble(editTextLng.getText().toString());
-
-        toast(context.getResources().getString(R.string.MainActivity_MockApplied));
-
-        endTime = System.currentTimeMillis() + (howManyTimes - 1) * timeInterval * 1000;
-        editor.putLong("endTime", endTime);
-        editor.commit();
+    public static void applyLocation() {
+//        if (latIsEmpty() || lngIsEmpty()) {
+//            toast(context.getResources().getString(R.string.MainActivity_NoLatLong));
+//            return;
+//        }
+        webAppInterface.resetRunningHandler();
 
         changeButtonToStop();
+        Thread t_running = new Thread() {
+            public void run() {
+                webAppInterface.rh.run();
+            }
+        };
 
-        try {
-            mockNetwork = new MockLocationProvider(LocationManager.NETWORK_PROVIDER, context);
-            mockGps = new MockLocationProvider(LocationManager.GPS_PROVIDER, context);
-        } catch (SecurityException e) {
-            e.printStackTrace();
-            MainActivity.toast(context.getResources().getString(R.string.ApplyMockBroadRec_MockNotApplied));
-            stopMockingLocation();
-            return;
-        }
+        mockNetwork = new MockLocationProvider(LocationManager.NETWORK_PROVIDER, context);
+        mockGps = new MockLocationProvider(LocationManager.GPS_PROVIDER, context);
+        Thread t_update = new Thread() {
+            public void run() {
+                while (!webAppInterface.rh.isFinished()) {
+                    Location currentLocation = webAppInterface.rh.getCurrentLocation();
+                    lat = currentLocation.getLat();
+                    lng = currentLocation.getLon();
+                    System.out.println("GET");
+                    System.out.println(lat);
+                    System.out.println(lng);
 
-        exec(lat, lng);
+//                    toast(context.getResources().getString(R.string.MainActivity_MockApplied));
 
-        if (!hasEnded()) {
-            toast(context.getResources().getString(R.string.MainActivity_MockLocRunning));
-            setAlarm(timeInterval);
-        } else {
-            stopMockingLocation();
-        }
+                    exec(lat, lng);
+
+//                    if (!hasEnded()) {
+//                        toast(context.getResources().getString(R.string.MainActivity_MockLocRunning));
+//                        setAlarm(timeInterval);
+//                    } else {
+//                        stopMockingLocation();
+//                    }
+
+                    try {
+                        Thread.sleep((long)webAppInterface.rh.getTimeInterval());
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        };
+
+        t_running.start();
+        t_update.start();
+        listThreads.add(t_running);
+        listThreads.add(t_update);
     }
 
     /**
@@ -286,8 +326,8 @@ public class MainActivity extends AppCompatActivity {
             //MockLocationProvider mockGps = new MockLocationProvider(LocationManager.GPS_PROVIDER, context);
             mockGps.pushLocation(lat, lng);
         } catch (Exception e) {
-            toast(context.getResources().getString(R.string.MainActivity_MockNotApplied));
-            changeButtonToApply();
+//            toast(context.getResources().getString(R.string.MainActivity_MockNotApplied));
+//            changeButtonToApply();
             e.printStackTrace();
             return;
         }
