@@ -69,18 +69,21 @@
         }
     }
 
+    <!--START FROM HERE-->
     markers = [];
     map.on('contextmenu', onMapClick);
+    <!--define running object-->
+    var runningIcon = L.icon({
+        iconUrl: 'running_icon.png',
+        iconSize:     [30, 30], // size of the icon
+    });
 
-    lat = Android.getLat();
-    lng = Android.getLng();
+    <!--location of Hanoi,Vietnam-->
+    lat = 21.028511;
+    lng = 105.804817;
+    map.flyTo(new L.LatLng(lat, lng), 12);
 
-    if (lat != 0 && lng != 0)
-    {
-        map.setView(new L.LatLng(lat, lng), 12);
-<!--        marker = L.marker([lat, lng]).addTo(map);-->
-<!--        markers.push(marker);-->
-    }
+<!--    L.marker([51.5, -0.09], {icon: runningIcon}).addTo(map);-->
 
 
 </script>

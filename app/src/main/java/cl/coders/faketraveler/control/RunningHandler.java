@@ -2,18 +2,22 @@ package cl.coders.faketraveler.control;
 
 import java.util.ArrayList;
 
+import cl.coders.faketraveler.model.CustomThread;
 import cl.coders.faketraveler.model.Location;
 
+
 public class RunningHandler {
+    double MAGIC_NUMBER_LAT_Y = 110.574;  // [km/deg]
+    double MAGIC_NUMBER_LON_X = 111.320;  // [km/deg]
+
     private ArrayList<Location> listLocation;
     private Location currentLocation;
     private int targetIdx;  // targetLocation = listLocation[targetIdx]
 
     private double speed;  // [km/h]
     private double timeInterval;  // update interval time [ms]
-    private double lastTick;  // [ms]
 
-    private double lookaheadDistance;  // lookahead dist to consider reaching target [m]
+    private double lookaheadDistance;  // lookahead dist to consider reaching target [km]
     private boolean isFinished;
 
     public RunningHandler(
@@ -26,7 +30,7 @@ public class RunningHandler {
         this.speed = speed;
         this.timeInterval = timeInterval;
         this.isFinished = false;
-        this.lookaheadDistance = 5.;
+        this.lookaheadDistance = 0.005;  // 5[m]
     }
 
     public double getSpeed() {
@@ -45,7 +49,11 @@ public class RunningHandler {
         return timeInterval;
     }
 
-    public Location getCurrentLocation(){
+    public ArrayList<Location> getListLocation() {
+        return listLocation;
+    }
+
+    public Location getCurrentLocation() {
         return currentLocation;
     }
 
@@ -58,8 +66,8 @@ public class RunningHandler {
         double y = distanceInKm * Math.sin(rad_alpha);
         double x = distanceInKm * Math.cos(rad_alpha);
 
-        double distanceInLat = y / 110.574;  // [deg]
-        double distanceInLon = x / (111.320 * Math.cos(distanceInLat * Math.PI / 180));  // [deg]
+        double distanceInLat = y / MAGIC_NUMBER_LAT_Y;  // [deg]
+        double distanceInLon = x / (MAGIC_NUMBER_LON_X * Math.cos(distanceInLat * Math.PI / 180));  // [deg]
 
         return new Location(distanceInLat, distanceInLon);
     }
@@ -73,7 +81,7 @@ public class RunningHandler {
     private void updateTargetIdx() {
         // update next target pos
         // if distance between current location and target < this.lookaheadDistance [m]
-        if (currentLocation.dist(listLocation.get(targetIdx)) < this.lookaheadDistance) {
+        if (currentLocation.dist(listLocation.get(targetIdx)) < this.lookaheadDistance / MAGIC_NUMBER_LAT_Y) {
             if (targetIdx < listLocation.size() - 1)
                 targetIdx += 1;
             else
@@ -81,26 +89,35 @@ public class RunningHandler {
         }
     }
 
-    public void run() {
-        if (listLocation.size() == 0)
-            return;
+    public CustomThread run_thread() {
+        return new CustomThread() {
+            @Override
+            public void run() {
+                if (listLocation.size() == 0)
+                    return;
 
-        // set the first location as starting point
-        currentLocation = listLocation.get(0);
-        targetIdx = 0;
-        updateTargetIdx();
+                // set the first location as starting point
+                currentLocation = listLocation.get(0);
+                targetIdx = 0;
+                updateTargetIdx();
 
-        // interrupt if finished
-        if (isFinished)
-            return;
+                // interrupt if finished
+                if (isFinished)
+                    return;
 
-        // update for each internal time
-        lastTick = System.currentTimeMillis();
-        while (!isFinished) {
-            if ((System.currentTimeMillis() - lastTick) > this.timeInterval) {
-                update();
-                lastTick = System.currentTimeMillis();
+                // update for each internal time
+                while (!isFinished) {
+                    if (!isRunning)
+                        break;
+
+                    update();
+                    try {
+                        Thread.sleep((long) timeInterval);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
-        }
+        };
     }
 }

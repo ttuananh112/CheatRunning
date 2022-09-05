@@ -28,6 +28,7 @@ import static cl.coders.faketraveler.MainActivity.SourceChange.NONE;
 
 import java.util.ArrayList;
 
+import cl.coders.faketraveler.model.CustomThread;
 import cl.coders.faketraveler.model.Location;
 
 
@@ -58,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
     private static MockLocationProvider mockGps;
 
     static WebAppInterface webAppInterface;
-    static ArrayList<Thread> listThreads;
+    static ArrayList<CustomThread> listThreads;
 
     public enum SourceChange {
         NONE, CHANGE_FROM_EDITTEXT, CHANGE_FROM_MAP
@@ -109,8 +110,9 @@ public class MainActivity extends AppCompatActivity {
                 webAppInterface.resetListLocation();  // TODO: marker should be in Location
 
                 for (int i = 0; i < listThreads.size(); i++) {
-                    listThreads.get(i).stop();
+                    listThreads.get(i).isRunning = false;
                 }
+                listThreads = new ArrayList<>();
                 webAppInterface.resetRunningHandler();
             }
         });
@@ -266,37 +268,26 @@ public class MainActivity extends AppCompatActivity {
 //            toast(context.getResources().getString(R.string.MainActivity_NoLatLong));
 //            return;
 //        }
-        webAppInterface.resetRunningHandler();
-
-        changeButtonToStop();
-        Thread t_running = new Thread() {
-            public void run() {
-                webAppInterface.rh.run();
-            }
-        };
-
         mockNetwork = new MockLocationProvider(LocationManager.NETWORK_PROVIDER, context);
         mockGps = new MockLocationProvider(LocationManager.GPS_PROVIDER, context);
-        Thread t_update = new Thread() {
+
+        webAppInterface.resetRunningHandler();
+        changeButtonToStop();
+
+        CustomThread t_running = webAppInterface.rh.run_thread();
+
+        CustomThread t_getting = new CustomThread() {
             public void run() {
                 while (!webAppInterface.rh.isFinished()) {
+                    if (!isRunning)
+                        break;
                     Location currentLocation = webAppInterface.rh.getCurrentLocation();
                     lat = currentLocation.getLat();
                     lng = currentLocation.getLon();
-                    System.out.println("GET");
                     System.out.println(lat);
                     System.out.println(lng);
-
-//                    toast(context.getResources().getString(R.string.MainActivity_MockApplied));
-
+                    System.out.println("-----");
                     exec(lat, lng);
-
-//                    if (!hasEnded()) {
-//                        toast(context.getResources().getString(R.string.MainActivity_MockLocRunning));
-//                        setAlarm(timeInterval);
-//                    } else {
-//                        stopMockingLocation();
-//                    }
 
                     try {
                         Thread.sleep((long)webAppInterface.rh.getTimeInterval());
@@ -304,13 +295,13 @@ public class MainActivity extends AppCompatActivity {
                         e.printStackTrace();
                     }
                 }
+                System.out.println(webAppInterface.rh.isFinished());
             }
         };
-
         t_running.start();
-        t_update.start();
+        t_getting.start();
         listThreads.add(t_running);
-        listThreads.add(t_update);
+        listThreads.add(t_getting);
     }
 
     /**
@@ -437,6 +428,12 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onClick(View arg0) {
+                for (int i = 0; i < listThreads.size(); i++) {
+                    listThreads.get(i).isRunning = false;
+                }
+                listThreads = new ArrayList<>();
+                webAppInterface.resetRunningHandler();
+
                 stopMockingLocation();
             }
 
