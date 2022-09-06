@@ -47,7 +47,7 @@
 	function onMapClick(e) {
 <!--		if (typeof marker != 'undefined')-->
 <!--		    map.removeLayer(marker);-->
-		marker = L.marker(e.latlng).addTo(map);
+		marker = L.marker(e.latlng).addTo(map).bindPopup(markers.length + 1);
 		markers.push(marker);
         Android.setPosition(e.latlng.wrap().toString());
         Android.addListLocation(e.latlng.lat.toFixed(5), e.latlng.lng.toFixed(5))
@@ -69,6 +69,12 @@
         }
     }
 
+    function updateRunner(lat, lon){
+        if (m_runner != null)
+            map.removeLayer(m_runner);
+        m_runner = L.marker([lat, lon], {icon: runningIcon}).addTo(map);
+    }
+
     <!--START FROM HERE-->
     markers = [];
     map.on('contextmenu', onMapClick);
@@ -82,8 +88,7 @@
     lat = 21.028511;
     lng = 105.804817;
     map.flyTo(new L.LatLng(lat, lng), 12);
-
-<!--    L.marker([51.5, -0.09], {icon: runningIcon}).addTo(map);-->
+    m_runner = null
 
 
 </script>

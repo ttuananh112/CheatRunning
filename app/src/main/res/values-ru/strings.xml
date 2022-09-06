@@ -5,7 +5,7 @@
     <string name="ActivityMain_Lat">Широта</string>
     <!-- Longitude abbreviation  -->
     <string name="ActivityMain_Long">Долгота</string>
-    <string name="ActivityMain_Apply">Применить</string>
+    <string name="ActivityMain_Apply">Run</string>
     <!-- Apply button then becomes Stop button through java code-->
     <string name="ActivityMain_Stop">Стоп</string>
     <string name="ActivityMain_..." translatable="false">...</string>

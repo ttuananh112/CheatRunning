@@ -6,7 +6,7 @@
     <string name="ActivityMain_Lat">Breitengrad</string>
     <!-- Longitude abbreviation  -->
     <string name="ActivityMain_Long">Längengrad</string>
-    <string name="ActivityMain_Apply">Anwenden</string>
+    <string name="ActivityMain_Apply">Run</string>
     <!-- Apply button then becomes Stop button through java code-->
     <string name="ActivityMain_Stop">Stopp</string>
     <string name="ActivityMain_..." translatable="false">...</string>

@@ -4,7 +4,7 @@
     <string name="ActivityMain_Lat">Lat</string>
     <!-- Longitude abbreviation  -->
     <string name="ActivityMain_Long">Long</string>
-    <string name="ActivityMain_Apply">Aplicar</string>
+    <string name="ActivityMain_Apply">Run</string>
     <!-- Apply button then becomes Stop button through java code-->
     <string name="ActivityMain_Stop">Parar</string>
 

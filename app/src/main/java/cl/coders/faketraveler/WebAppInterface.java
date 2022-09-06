@@ -22,7 +22,7 @@ public class WebAppInterface {
     }
 
     public void resetRunningHandler() {
-        rh = new RunningHandler(listLoc, 5., 10);
+        rh = new RunningHandler(listLoc, 100);
     }
 
 

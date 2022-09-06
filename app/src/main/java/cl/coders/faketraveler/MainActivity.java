@@ -278,16 +278,28 @@ public class MainActivity extends AppCompatActivity {
 
         CustomThread t_getting = new CustomThread() {
             public void run() {
+                // TODO: KEEP MOCKING LOCATION WHEN FINISHING TRACK
                 while (!webAppInterface.rh.isFinished()) {
                     if (!isRunning)
                         break;
                     Location currentLocation = webAppInterface.rh.getCurrentLocation();
+                    // skip null data (some first steps)
+                    if (currentLocation == null)
+                        continue;
                     lat = currentLocation.getLat();
                     lng = currentLocation.getLon();
                     System.out.println(lat);
                     System.out.println(lng);
                     System.out.println("-----");
+                    // update mock location
                     exec(lat, lng);
+                    // view on map
+                    webView.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            webView.loadUrl("javascript:updateRunner(" + lat + "," + lng + ");");
+                        }
+                    });
 
                     try {
                         Thread.sleep((long)webAppInterface.rh.getTimeInterval());
@@ -434,7 +446,7 @@ public class MainActivity extends AppCompatActivity {
                 listThreads = new ArrayList<>();
                 webAppInterface.resetRunningHandler();
 
-                stopMockingLocation();
+//                stopMockingLocation();
             }
 
         });
