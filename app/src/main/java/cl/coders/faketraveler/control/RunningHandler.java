@@ -53,7 +53,7 @@ public class RunningHandler {
         }
 
         // define speed
-        this.rangeSpeed = new ArrayList<>(Arrays.asList(5.5, 7.2));
+        this.rangeSpeed = new ArrayList<>(Arrays.asList(5., 6.7));
         this.currentSpeed = 0;
     }
 
